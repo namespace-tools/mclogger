@@ -1,0 +1,36 @@
+#!/bin/sh
+
+# Block One: Wait 5 seconds for the file lock to release.
+# If the file lock does not release, release it.
+LOOP=0
+while [ -f ../.lock ]; do
+    /bin/sleep 1
+    LOOP=$(($LOOP + 1))
+    if [ $LOOP -ge 5 ]; then
+        /bin/rm -f ../.lock
+    fi
+done
+
+# Block Two: delete the .counter and .logfile files
+# Also, log reset action
+if [ -f ../.counter ]; then
+    /bin/rm ../.counter
+    /usr/bin/touch ../.counter
+    /bin/echo 0 > ../.counter
+fi
+if [ -f ../.logfile ]; then
+	/usr/rm -f ../.logfile
+	/usr/bin/touch ../.logfile
+	/bin/echo "Log Reset @ $(date '+%d-%b-%Y, %H:%M:%S')" >> .fulllog
+	/bin/echo "Log Reset @ $(date '+%d-%b-%Y, %H:%M:%S')" > ../.logfile
+fi
+
+# Block Three: Set the lock and increment the counter
+# Then unset the lock and output .counter to html
+/usr/bin/printf "Content-type: text/html\n\n"
+/usr/bin/printf "<body bgcolor='#282828'>\n"
+/usr/bin/printf "<font color='#D65D0E'><center><h1>\n"
+/usr/bin/printf "Log Reset\n"
+/usr/bin/printf "</h1>"
+/usr/bin/printf "<pre>$(tail -r ../.logfile)</pre>"
+/usr/bin/printf "</font></center></body>\n"
