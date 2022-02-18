@@ -1,0 +1,54 @@
+#!/bin/sh
+
+# Adapted from the "smj's no nonsense house" cgi counter
+# By namespace on 16-Feb-2022
+
+# Block One: Wait 3 seconds for the file lock to release.
+# If the file lock does not release, release it.
+LOOP=0
+while [ -f .lock ]; do
+    /bin/sleep 1
+    LOOP=$(($LOOP + 1))
+    if [ $LOOP -ge 3 ]; then
+        /bin/rm -f .lock
+    fi
+done
+
+# Block Two: Check for .counter file; if not, then create it
+# Also: Check for the .logfile file; if not, then create it
+if [ ! -f .counter ]; then
+    /bin/echo 0 > .counter
+fi
+if [ ! -f .logfile ]; then
+	/usr/bin/touch .logfile
+fi
+
+# Block Three: Log the requesting date/time to log file
+# Also, trim the file to the last 10 lines.
+# Also, trim the admin log to 100 lines.
+/bin/echo "$REMOTE_ADDR	$REMOTE_HOST	$(date '+%d-%b-%Y, %H:%M:%S')" >> admin/.fulllog
+/bin/echo "$(date '+%d-%b-%Y, %H:%M:%S')" >> .logfile
+LOGLEN=$(wc -l < .logfile)
+if [ $LOGLEN -gt 10 ]; then
+	LOGLEN=$(($LOGLEN-10))
+	/usr/bin/awk "NR>$LOGLEN" .logfile > .tmpfile && mv .tmpfile .logfile
+fi
+ALOGLEN=$(wc -l < admin/.fulllog)
+if [ $ALOGLEN -gt 100 ]; then
+	ALOGLEN=$(($ALOGLEN-100))
+	/usr/bin/awk "NT>$ALOGLEN" admin/.fulllog > admin/.tmpfile && mv admin/.tmpfile admin/.fulllog
+fi
+
+# Block Three: Set the lock and increment the counter
+# Then unset the lock and output .counter to html
+/usr/bin/touch -f .lock
+COUNT=$(($(/bin/cat .counter)+1))
+/bin/echo $COUNT > .counter
+/bin/rm .lock
+/usr/bin/printf "Content-type: text/html\n\n"
+/usr/bin/printf "<body bgcolor='#282828'>\n"
+/usr/bin/printf "<font color='#D65D0E'><center><h1>\n"
+/usr/bin/printf "$COUNT\n"
+/usr/bin/printf "</h1>"
+/usr/bin/printf "<pre>$(tail -r .logfile)</pre>"
+/usr/bin/printf "</font></center></body>\n"
