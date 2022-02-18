@@ -1,0 +1,9 @@
+#!/bin/sh
+
+/usr/bin/printf "Content-type: text/html\n\n"
+/usr/bin/printf "<body bgcolor='#282828'>\n"
+/usr/bin/printf "<font color='#D65D0E'><center><h1>\n"
+/usr/bin/printf "$COUNT\n"
+/usr/bin/printf "</h1>"
+/usr/bin/printf "<pre>$(tail -r .fulllog)</pre>"
+/usr/bin/printf "</font></center></body>\n"
